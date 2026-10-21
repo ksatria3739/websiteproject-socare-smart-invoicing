@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f6f6f8] text-slate-900 antialiased selection:bg-[#0089e4] selection:text-white;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print,
+  header,
+  footer {
+    display: none !important;
+  }
+  .print-container {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}

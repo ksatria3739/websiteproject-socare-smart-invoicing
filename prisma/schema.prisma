@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ItemType {
+  SERVICE
+  PRODUCT
+}
+
+enum InvoiceStatus {
+  DRAFT
+  UNPAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethodType {
+  CREDIT_CARD
+  BANK_TRANSFER
+}
+
+model CompanySetting {
+  id            String   @id @default(cuid())
+  companyName   String   @default("PT Socare Group International")
+  companySub    String   @default("So Safe and Easy Partner — Consulting, PMA & Commerce Centre")
+  invoicePrefix String   @default("INV/SGI")
+  email         String   @default("admin@socare.id")
+  phone         String   @default("082260604688")
+  address       String?  @default("Ruko Casa De Parco. 20, Sampora, Cisauk, Tangerang Regency, Kota Tangerang Selatan, Banten 15345")
+  pgProvider    String   @default("SIMULATOR") // SIMULATOR, MIDTRANS_SANDBOX, MIDTRANS_PRODUCTION, XENDIT
+  updatedAt     DateTime @updatedAt
+}
+
+model CatalogItem {
+  id          String   @id @default(cuid())
+  skuCode     String   @unique
+  name        String
+  category    String   @default("Consulting")
+  type        ItemType @default(SERVICE)
+  price       Decimal  @db.Decimal(15, 2)
+  stock       Int?     // Null for services, integer for physical products
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Invoice {
+  id                String        @id @default(cuid())
+  invoiceNumber     String        @unique // e.g., INV/DPS/06/2026/1293
+  viewToken         String        @unique // 64-char hex hash for /invoices/view/[viewToken]
+  checkoutToken     String        @unique // 64-char hex hash for /payment/checkout/[checkoutToken]
+  
+  clientFullName    String        // e.g., I Made Justin Laksmana Van Veggel
+  clientNickname    String        // e.g., Justin
+  clientEmail       String?
+  clientPhone       String?
+  
+  issueDate         DateTime
+  dueDate           DateTime
+  
+  subtotal          Decimal       @db.Decimal(15, 2)
+  taxAmount         Decimal       @default(0) @db.Decimal(15, 2)
+  totalAmount       Decimal       @db.Decimal(15, 2)
+  
+  allowCreditCard   Boolean       @default(true)
+  allowBankTransfer Boolean       @default(true)
+  
+  status            InvoiceStatus @default(UNPAID)
+  paidAt            DateTime?
+  paymentMethodUsed String?       // e.g., "CREDIT_CARD (Visa *4242)" or "BANK_TRANSFER (BCA VA)"
+  pgReferenceId     String?       // Midtrans/Xendit transaction ID
+  
+  items             InvoiceItem[]
+  transactions      TransactionLog[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String       @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  catalogId   String?
+  description String       // e.g., Robotics Explorer 1.0 (FWP 1) (1x) - Bulan Juli 2026
+  quantity    Int          @default(1)
+  unitPrice   Decimal      @db.Decimal(15, 2)
+  totalPrice  Decimal      @db.Decimal(15, 2)
+}
+
+model TransactionLog {
+  id            String            @id @default(cuid())
+  invoiceId     String
+  invoice       Invoice           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  paymentMethod PaymentMethodType
+  channel       String            // e.g., VISA, MASTERCARD, BCA_VA, MANDIRI_VA
+  amount        Decimal           @db.Decimal(15, 2)
+  status        String            // PENDING, SUCCESS, FAILED
+  rawResponse   Json?
+  createdAt     DateTime          @default(now())
+}
