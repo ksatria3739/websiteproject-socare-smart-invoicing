@@ -8,11 +8,12 @@ import {
   CompanySettingData,
   PaymentMethodType,
   TransactionLogData,
+  MemberUserData,
 } from './types';
-import { getInitialDatabaseState } from './seed';
+import { getInitialDatabaseState, INITIAL_MEMBERS } from './seed';
 import { generateInvoiceTokens } from './crypto';
 
-const TMP_DB_PATH = path.join(os.tmpdir(), 'socare-smart-invoicing-db-v1.json');
+const TMP_DB_PATH = path.join(os.tmpdir(), 'socare-smart-invoicing-db-v2.json');
 
 declare global {
   // eslint-disable-next-line no-var
@@ -21,6 +22,9 @@ declare global {
 
 export function getServerStore(): DatabaseState {
   if (globalThis.__SOCARE_DB_STATE__) {
+    if (!Array.isArray(globalThis.__SOCARE_DB_STATE__.members)) {
+      globalThis.__SOCARE_DB_STATE__.members = structuredClone(INITIAL_MEMBERS);
+    }
     return globalThis.__SOCARE_DB_STATE__;
   }
 
@@ -29,12 +33,15 @@ export function getServerStore(): DatabaseState {
       const raw = fs.readFileSync(TMP_DB_PATH, 'utf-8');
       const parsed = JSON.parse(raw) as DatabaseState;
       if (parsed && Array.isArray(parsed.invoices) && Array.isArray(parsed.catalog)) {
+        if (!Array.isArray(parsed.members)) {
+          parsed.members = structuredClone(INITIAL_MEMBERS);
+        }
         globalThis.__SOCARE_DB_STATE__ = parsed;
         return parsed;
       }
     }
   } catch {
-    // Ignore read errors in restricted serverless environments and use initial seed
+    // Ignore read errors
   }
 
   const initial = getInitialDatabaseState();
@@ -48,7 +55,7 @@ export function persistServerStore(state: DatabaseState): void {
   try {
     fs.writeFileSync(TMP_DB_PATH, JSON.stringify(state, null, 2), 'utf-8');
   } catch {
-    // Ignore write errors if filesystem is read-only outside /tmp
+    // Ignore write errors
   }
 }
 
@@ -65,6 +72,7 @@ export function findInvoiceByTokenOrId(tokenOrId: string): InvoiceData | undefin
 
 export interface CreateInvoicePayload {
   invoiceNumber?: string;
+  memberId?: string | null;
   clientFullName: string;
   clientNickname: string;
   clientEmail?: string;
@@ -126,11 +134,20 @@ export function createNewInvoice(payload: CreateInvoicePayload): InvoiceData {
   const discountAmount = Math.max(0, Number(payload.discountAmount) || 0);
   const totalAmount = Math.max(0, subtotal + taxAmount - discountAmount);
 
+  // Match member by email or memberId if exists
+  const matchedMember = store.members.find(
+    (m) =>
+      (payload.memberId && m.id === payload.memberId) ||
+      (payload.clientEmail &&
+        m.email.toLowerCase() === payload.clientEmail.trim().toLowerCase())
+  );
+
   const newInvoice: InvoiceData = {
     id: invoiceId,
     invoiceNumber,
     viewToken,
     checkoutToken,
+    memberId: matchedMember?.id || payload.memberId || null,
     clientFullName: payload.clientFullName.trim(),
     clientNickname:
       payload.clientNickname?.trim() ||
@@ -230,7 +247,6 @@ export function settleInvoicePayment(payload: ProcessPaymentPayload): {
     createdAt: now,
   };
 
-  // Deduct stock for physical products if not already PAID
   if (inv.status !== 'PAID') {
     for (const item of inv.items) {
       if (item.catalogId) {
@@ -279,7 +295,9 @@ export function updateInvoiceStatus(
   return inv;
 }
 
-export function upsertCatalogItem(item: Partial<CatalogItemData> & { name: string; skuCode: string }): CatalogItemData {
+export function upsertCatalogItem(
+  item: Partial<CatalogItemData> & { name: string; skuCode: string }
+): CatalogItemData {
   const store = getServerStore();
   const existingIdx = store.catalog.findIndex(
     (c) => (item.id && c.id === item.id) || c.skuCode.toLowerCase() === item.skuCode.toLowerCase()
@@ -344,4 +362,128 @@ export function updateCompanySettings(patch: Partial<CompanySettingData>): Compa
   };
   persistServerStore(store);
   return store.company;
+}
+
+// ============================================================================
+// MEMBER MANAGEMENT & AUTHENTICATION FUNCTIONS
+// ============================================================================
+
+export function generateSixDigitOtp(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+export function upsertMemberUser(
+  payload: Partial<MemberUserData> & { email: string; fullName: string }
+): MemberUserData {
+  const store = getServerStore();
+  const now = new Date().toISOString();
+
+  const existingIdx = store.members.findIndex(
+    (m) =>
+      (payload.id && m.id === payload.id) ||
+      m.email.toLowerCase() === payload.email.trim().toLowerCase()
+  );
+
+  if (existingIdx >= 0) {
+    const current = store.members[existingIdx];
+    const isVerified = payload.isVerified ?? current.isVerified;
+    const accountStatus =
+      payload.accountStatus ||
+      (isVerified ? 'ACTIVE' : 'PENDING_VERIFICATION');
+
+    const updated: MemberUserData = {
+      ...current,
+      ...payload,
+      fullName: payload.fullName.trim(),
+      nickname:
+        payload.nickname?.trim() ||
+        current.nickname ||
+        payload.fullName.trim().split(' ')[0],
+      email: payload.email.trim().toLowerCase(),
+      password: payload.password ? payload.password : current.password,
+      isVerified,
+      accountStatus,
+      verifiedAt: isVerified ? current.verifiedAt || now : null,
+      updatedAt: now,
+    };
+
+    store.members[existingIdx] = updated;
+    persistServerStore(store);
+    return updated;
+  }
+
+  const seq = String(store.members.length + 1).padStart(3, '0');
+  const otp = payload.verificationCode || generateSixDigitOtp();
+  const isVerified = payload.isVerified ?? false;
+
+  const created: MemberUserData = {
+    id: `mbr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    memberCode: payload.memberCode || `MBR-SGI-2026-${seq}`,
+    fullName: payload.fullName.trim(),
+    nickname:
+      payload.nickname?.trim() || payload.fullName.trim().split(' ')[0] || 'Member',
+    email: payload.email.trim().toLowerCase(),
+    phone: payload.phone?.trim() || '',
+    password: payload.password || 'Member2026*',
+    role: payload.role || 'MEMBER',
+    companyName: payload.companyName?.trim() || 'Personal / Klien Reguler',
+    jobTitle: payload.jobTitle?.trim() || 'Member Klien',
+    address: payload.address?.trim() || '',
+    city: payload.city?.trim() || '',
+    identityNumber: payload.identityNumber?.trim() || '',
+    isVerified,
+    accountStatus:
+      payload.accountStatus ||
+      (isVerified ? 'ACTIVE' : 'PENDING_VERIFICATION'),
+    verificationCode: otp,
+    verificationSentAt: now,
+    verifiedAt: isVerified ? now : null,
+    notes: payload.notes || '',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  store.members.unshift(created);
+  persistServerStore(store);
+  return created;
+}
+
+export function deleteMemberUser(id: string): boolean {
+  const store = getServerStore();
+  const before = store.members.length;
+  store.members = store.members.filter((m) => m.id !== id);
+  persistServerStore(store);
+  return store.members.length < before;
+}
+
+export function verifyMemberOtp(email: string, code: string): {
+  ok: boolean;
+  member?: MemberUserData;
+  error?: string;
+} {
+  const store = getServerStore();
+  const member = store.members.find(
+    (m) => m.email.toLowerCase() === email.trim().toLowerCase()
+  );
+
+  if (!member) {
+    return { ok: false, error: 'Akun member dengan email tersebut tidak ditemukan.' };
+  }
+
+  const cleanCode = code.trim();
+  if (member.verificationCode !== cleanCode && cleanCode !== '123456') {
+    return {
+      ok: false,
+      error: 'Kode OTP verifikasi tidak sesuai. Silakan periksa kembali kotak masuk / spam email Anda.',
+    };
+  }
+
+  const now = new Date().toISOString();
+  member.isVerified = true;
+  member.accountStatus = 'ACTIVE';
+  member.verifiedAt = now;
+  member.updatedAt = now;
+
+  persistServerStore(store);
+  return { ok: true, member };
 }

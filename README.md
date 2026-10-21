@@ -23,8 +23,14 @@ Dirancang mengacu pada identitas korporasi **PT Socare Group International (`soc
   - Menghasilkan nomor Virtual Account otomatis lengkap dengan tombol salin dan panduan pembayaran ATM/M-Banking, serta simulator konfirmasi pembayaran instan.
 - **Real-time Settlement**: Begitu pembayaran diselesaikan, layar otomatis beralih ke **Bukti Pembayaran Lunas (Digital Receipt)**, memotong stok produk fisik secara otomatis, dan memperbarui status invoice menjadi **PAID (LUNAS)**.
 
-### 4. Admin Dashboard, Hybrid Catalog & One-Click WhatsApp Generator (`/admin/*`)
-- **Dashboard Overview (`/admin`)**: Metrik pendapatan lunas (`PAID`), tagihan tertunda (`UNPAID`), tagihan jatuh tempo (`OVERDUE`), dan tabel manajemen seluruh invoice.
+### 4. Sistem Autentikasi Member, Verifikasi OTP Email (Hostinger SMTP) & Portal Member (`/login`, `/register`, `/verify-email`, `/member`)
+- **Proteksi Portal Tagihan dari Guest**: Pengunjung yang belum login (*Guest*) tidak dapat melihat daftar/pencarian tagihan di halaman depan maupun melakukan pemesanan sebelum masuk dan memverifikasi email akunnya.
+- **Registrasi & Verifikasi Email Wajib (Hostinger SMTP)**: Setiap pendaftaran akun member baru di `/register` mengirimkan kode OTP 6-digit ke email pendaftar menggunakan **SMTP Hostinger** (`smtp.hostinger.com`, akun `admin@socare.id`). Member wajib memverifikasi OTP di `/verify-email` sebelum dapat mengakses portal tagihan dan melakukan transaksi.
+- **Member Dashboard (`/member`)**: Portal eksklusif dengan animasi modern tempat member memantau ringkasan tagihan pribadi (`UNPAID`, `OVERDUE`, `PAID`), mengunduh PDF invoice, serta langsung membayar via Kartu Kredit 3DS atau Virtual Account.
+
+### 5. Admin Dashboard, Manajemen Akun Member Detail, Hybrid Catalog & One-Click WhatsApp Generator (`/admin/*`)
+- **Dashboard Overview (`/admin`)**: Metrik pendapatan lunas (`PAID`), tagihan tertunda (`UNPAID`), tagihan jatuh tempo (`OVERDUE`), statistik akun member terverifikasi, dan tabel manajemen seluruh invoice.
+- **Manajemen & Konfigurasi Akun Member Lengkap (`/admin/members`)**: Admin dapat melihat, mencari, memfilter, **menambahkan**, **mengedit secara rinci** (Nama Lengkap, Panggilan, Email, Password, No. WhatsApp, Role `MEMBER`/`ADMIN`, Nama Perusahaan, Jabatan, Nomor Identitas NIK/Paspor/NPWP, Kota, Alamat Lengkap, Status Verifikasi Email, Kode OTP, Status Akun `ACTIVE`/`PENDING_VERIFICATION`/`SUSPENDED`, Catatan Internal Admin), **menghapus akun member**, serta **mengirim ulang OTP via SMTP Hostinger (`admin@socare.id`)** dengan 1 klik.
 - **Generator Invoice & Link Bayar Cepat (`/admin/invoices/create`)**: Mendukung pemilihan item dari katalog maupun ketik manual (*ad-hoc item*), dengan pratinjau langsung pesan WhatsApp.
 - **One-Click WhatsApp Message Template Modal**: Menghasilkan format pesan WhatsApp yang **100% persis** dengan standar yang diminta klien:
   ```text

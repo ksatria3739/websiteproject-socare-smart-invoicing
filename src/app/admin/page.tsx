@@ -14,6 +14,10 @@ import {
   Search,
   RotateCcw,
   Check,
+  Users,
+  UserCheck,
+  MailWarning,
+  ArrowRight,
 } from 'lucide-react';
 import { useAppState } from '@/context/AppStateContext';
 import {
@@ -53,11 +57,13 @@ export default function AdminDashboardPage() {
     return true;
   });
 
+  const members = state.members || [];
+
   return (
-    <div className="space-y-8">
-      {/* KPI Summary Cards */}
+    <div className="space-y-8 animate-fade-in-up">
+      {/* KPI Summary Cards with Smooth Hover Animations */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Total Revenue (Paid)
@@ -74,7 +80,7 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Pending Invoices (Unpaid)
@@ -91,7 +97,7 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Overdue Invoices
@@ -108,20 +114,20 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Total Transaksi & Katalog
+              Akun Member & Katalog
             </span>
             <div className="h-9 w-9 rounded-xl bg-sky-50 text-[#0089e4] flex items-center justify-center">
-              <CreditCard className="h-5 w-5" />
+              <Users className="h-5 w-5" />
             </div>
           </div>
           <p className="text-2xl font-black text-[#192730] mt-3">
-            {state.invoices.length} Invoice
+            {members.length} Member
           </p>
           <p className="text-xs text-[#0089e4] font-semibold mt-1">
-            {state.catalog.length} Item Katalog Aktif (Jasa & Produk)
+            {members.filter((m) => m.isVerified).length} Verified • {state.catalog.length} Katalog
           </p>
         </div>
       </div>
@@ -130,22 +136,31 @@ export default function AdminDashboardPage() {
       <div className="rounded-2xl bg-gradient-to-r from-[#192730] via-[#1c3242] to-[#0089e4] p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <span className="inline-block rounded-full bg-white/15 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-sky-200">
-            One-Click WhatsApp Billing Workflow
+            One-Click WhatsApp Billing & Member ERP
           </span>
           <h3 className="text-lg sm:text-xl font-extrabold">
-            Buat Tagihan Jasa Konsultan atau Produk & Kirim Link Pembayaran Kartu Kredit ke WhatsApp
+            Buat Tagihan Jasa Konsultan / Produk & Kelola Verifikasi Akun Member
           </h3>
           <p className="text-xs text-sky-100/90 max-w-2xl">
             Sistem otomatis men-generate Token SHA-256 unik untuk halaman View Invoice & Checkout Kartu Kredit (3DS) / Virtual Account beserta teks WhatsApp siap kirim.
           </p>
         </div>
-        <Link
-          href="/admin/invoices/create"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-[#192730] hover:bg-sky-50 px-5 py-3.5 text-xs sm:text-sm font-extrabold shadow-md transition shrink-0"
-        >
-          <PlusCircle className="h-4 w-4 text-[#0089e4]" />
-          + Buat Invoice & Link Bayar Cepat
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <Link
+            href="/admin/members"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 px-4 py-3.5 text-xs font-extrabold text-white transition"
+          >
+            <Users className="h-4 w-4 text-sky-300" />
+            Kelola Akun Member
+          </Link>
+          <Link
+            href="/admin/invoices/create"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white text-[#192730] hover:bg-sky-50 px-5 py-3.5 text-xs sm:text-sm font-extrabold shadow-md transition"
+          >
+            <PlusCircle className="h-4 w-4 text-[#0089e4]" />
+            + Buat Invoice & Link Bayar Cepat
+          </Link>
+        </div>
       </div>
 
       {/* Invoices Management Table */}
@@ -316,6 +331,68 @@ export default function AdminDashboardPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Quick Member Accounts Overview Widget */}
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-extrabold text-[#192730]">
+              Ringkasan Akun Member Terdaftar & Status Verifikasi Email
+            </h3>
+            <p className="text-xs text-slate-500">
+              Kelola tambah, hapus, dan edit rinci profil serta verifikasi OTP member
+            </p>
+          </div>
+          <Link
+            href="/admin/members"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0089e4] hover:bg-[#0073c2] px-4 py-2 text-xs font-bold text-white transition"
+          >
+            Buka Manajemen Member Lengkap
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-5">
+          {members.slice(0, 4).map((m) => (
+            <div
+              key={m.id}
+              className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[11px] font-bold text-[#0089e4]">
+                    {m.memberCode}
+                  </span>
+                  {m.isVerified ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                      <UserCheck className="h-3 w-3" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                      <MailWarning className="h-3 w-3" />
+                      Pending OTP
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-extrabold text-slate-900 mt-1.5">
+                  {m.fullName} ({m.nickname})
+                </p>
+                <p className="text-[11px] text-slate-500 truncate">{m.email}</p>
+                <p className="text-[11px] font-semibold text-slate-700 mt-1">
+                  {m.companyName}
+                </p>
+              </div>
+              <Link
+                href="/admin/members"
+                className="text-[11px] font-bold text-[#0089e4] hover:underline pt-2 border-t border-slate-200/80 inline-block"
+              >
+                Edit Detail Member &rarr;
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
     </div>

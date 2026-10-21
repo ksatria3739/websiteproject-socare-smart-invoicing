@@ -8,6 +8,7 @@ import {
   CreditCard,
   Sparkles,
   ShieldCheck,
+  Mail,
 } from 'lucide-react';
 import { useAppState } from '@/context/AppStateContext';
 import { COMPANY_PRESETS } from '@/lib/seed';
@@ -34,6 +35,16 @@ export default function AdminSettingsPage() {
   const [xenditSecretKey, setXenditSecretKey] = useState(
     state.company.xenditSecretKey || ''
   );
+  const [smtpHost, setSmtpHost] = useState(
+    state.company.smtpHost || 'smtp.hostinger.com'
+  );
+  const [smtpPort, setSmtpPort] = useState(state.company.smtpPort || 465);
+  const [smtpUser, setSmtpUser] = useState(
+    state.company.smtpUser || 'admin@socare.id'
+  );
+  const [smtpPass, setSmtpPass] = useState(
+    state.company.smtpPass || 'P@ssw0rd2026*'
+  );
   const [savedNotice, setSavedNotice] = useState(false);
 
   useEffect(() => {
@@ -44,6 +55,10 @@ export default function AdminSettingsPage() {
     setPhone(state.company.phone);
     setAddress(state.company.address);
     setPgProvider(state.company.pgProvider);
+    setSmtpHost(state.company.smtpHost || 'smtp.hostinger.com');
+    setSmtpPort(state.company.smtpPort || 465);
+    setSmtpUser(state.company.smtpUser || 'admin@socare.id');
+    setSmtpPass(state.company.smtpPass || 'P@ssw0rd2026*');
   }, [state.company]);
 
   const applyPreset = async (key: keyof typeof COMPANY_PRESETS) => {
@@ -73,19 +88,23 @@ export default function AdminSettingsPage() {
       midtransServerKey,
       midtransClientKey,
       xenditSecretKey,
+      smtpHost,
+      smtpPort: Number(smtpPort),
+      smtpUser,
+      smtpPass,
     });
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 3000);
   };
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 animate-fade-in-up">
       <div>
         <h1 className="text-xl font-extrabold text-[#192730]">
-          Pengaturan Profil Perusahaan & Integrasi Payment Gateway
+          Pengaturan Profil Perusahaan, SMTP Hostinger & Payment Gateway
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Konfigurasi identitas pengirim pada template WhatsApp, kop dokumen Invoice, dan kredensial Midtrans / Xendit
+          Konfigurasi identitas pengirim pada template WhatsApp, kop dokumen Invoice, SMTP verifikasi email member, dan kredensial Midtrans / Xendit
         </p>
       </div>
 
@@ -140,7 +159,7 @@ export default function AdminSettingsPage() {
       {savedNotice && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center gap-2 text-xs font-bold text-emerald-800">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          Pengaturan berhasil disimpan dan langsung diterapkan ke seluruh halaman Invoice & Format WhatsApp!
+          Pengaturan berhasil disimpan dan langsung diterapkan ke seluruh sistem!
         </div>
       )}
 
@@ -224,6 +243,66 @@ export default function AdminSettingsPage() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Hostinger SMTP Email Verification Settings */}
+        <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <Mail className="h-4 w-4 text-[#0089e4]" />
+            <h2 className="text-sm font-extrabold text-[#192730]">
+              Konfigurasi SMTP Hostinger (Verifikasi Email Akun Member)
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                SMTP Host Server
+              </label>
+              <input
+                type="text"
+                value={smtpHost}
+                onChange={(e) => setSmtpHost(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-mono text-xs font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                SMTP Port (SSL 465 / TLS 587)
+              </label>
+              <input
+                type="number"
+                value={smtpPort}
+                onChange={(e) => setSmtpPort(parseInt(e.target.value, 10) || 465)}
+                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-mono text-xs font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Akun Email Pengirim SMTP
+              </label>
+              <input
+                type="email"
+                value={smtpUser}
+                onChange={(e) => setSmtpUser(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-mono text-xs font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Password SMTP Hostinger
+              </label>
+              <input
+                type="text"
+                value={smtpPass}
+                onChange={(e) => setSmtpPass(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-mono text-xs font-bold"
               />
             </div>
           </div>

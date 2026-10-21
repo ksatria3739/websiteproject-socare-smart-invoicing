@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Globe,
   MapPin,
   Phone,
   Mail,
@@ -14,6 +13,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useAppState } from '@/context/AppStateContext';
+import { SocareLogo } from '@/components/SocareLogo';
 
 export function Footer() {
   const { state } = useAppState();
@@ -54,18 +54,14 @@ export function Footer() {
 
       {/* Main Footer Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {/* Column 1: Company Info */}
+        {/* Column 1: Company Info with Uploaded Socare Logo */}
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[#0089e4] flex items-center justify-center text-white font-bold">
-              <Globe className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold text-white">
-                {state.company.companyName}
-              </h3>
-              <p className="text-xs text-sky-400">So Safe and Easy Partner</p>
-            </div>
+          <SocareLogo variant="dark" size="md" showSubtitle={false} />
+          <div>
+            <h3 className="text-sm font-extrabold text-white">
+              {state.company.companyName}
+            </h3>
+            <p className="text-xs text-sky-400">So Safe and Easy Partner</p>
           </div>
           <p className="text-xs leading-relaxed text-slate-400">
             Konsultan manajemen internasional & pusat niaga terpadu yang berfokus pada pendampingan Penanaman Modal Asing (PMA), kepatuhan hukum bisnis, kemitraan strategis lintas negara, program magang internasional, serta penyediaan produk & modul korporasi.
@@ -115,16 +111,22 @@ export function Footer() {
           </ul>
         </div>
 
-        {/* Column 3: Legal & Acquirer Compliance */}
+        {/* Column 3: Legal & Member Portal */}
         <div>
           <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-4">
-            Halaman Kepatuhan & Legal
+            Akses Member & Kepatuhan Legal
           </h4>
           <ul className="space-y-2.5 text-xs text-slate-300">
             <li>
-              <Link href="/about" className="hover:text-[#0089e4] transition flex items-center justify-between">
-                <span>Tentang Kami & Visi Misi</span>
-                <ArrowUpRight className="h-3.5 w-3.5 text-slate-500" />
+              <Link href="/login" className="hover:text-[#0089e4] transition flex items-center justify-between text-sky-400 font-semibold">
+                <span>Login Portal Member & Admin</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </li>
+            <li>
+              <Link href="/register" className="hover:text-[#0089e4] transition flex items-center justify-between text-emerald-400 font-semibold">
+                <span>Daftar Akun Member Baru</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </li>
             <li>
@@ -143,12 +145,6 @@ export function Footer() {
               <Link href="/contact" className="hover:text-[#0089e4] transition flex items-center justify-between">
                 <span>Hubungi Kami & Layanan Pengaduan</span>
                 <ArrowUpRight className="h-3.5 w-3.5 text-slate-500" />
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin" className="hover:text-[#0089e4] transition flex items-center justify-between text-sky-400 font-semibold">
-                <span>Portal Admin & Invoicing Engine</span>
-                <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </li>
           </ul>

@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
       const incoming = body.state as DatabaseState;
       const store = getServerStore();
 
-      // Merge any custom invoices created on client that server might not have after cold start
       if (Array.isArray(incoming.invoices)) {
         for (const clientInv of incoming.invoices) {
           const existingIdx = store.invoices.findIndex(
@@ -35,13 +34,30 @@ export async function POST(req: NextRequest) {
           if (existingIdx === -1) {
             store.invoices.unshift(clientInv);
           } else {
-            // Keep whichever version was updated more recently (e.g., if paid)
             const serverInv = store.invoices[existingIdx];
-            if (
-              clientInv.status === 'PAID' &&
-              serverInv.status !== 'PAID'
-            ) {
+            if (clientInv.status === 'PAID' && serverInv.status !== 'PAID') {
               store.invoices[existingIdx] = clientInv;
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(incoming.members)) {
+        for (const clientMbr of incoming.members) {
+          const existingIdx = store.members.findIndex(
+            (m) =>
+              m.id === clientMbr.id ||
+              m.email.toLowerCase() === clientMbr.email.toLowerCase()
+          );
+          if (existingIdx === -1) {
+            store.members.unshift(clientMbr);
+          } else {
+            const serverMbr = store.members[existingIdx];
+            if (
+              new Date(clientMbr.updatedAt).getTime() >=
+              new Date(serverMbr.updatedAt).getTime()
+            ) {
+              store.members[existingIdx] = clientMbr;
             }
           }
         }

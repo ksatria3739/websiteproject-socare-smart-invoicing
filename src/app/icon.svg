@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#192730"/>
+  <!-- Top-left Blue Interlocking Hexagon -->
+  <path d="M36 14H20L12 28L20 42H28" stroke="#0089e4" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-right Red Interlocking Hexagon -->
+  <path d="M28 22H44L52 36L44 50H28" stroke="#ef4444" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

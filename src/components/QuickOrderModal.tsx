@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   X,
@@ -10,7 +11,10 @@ import {
   CheckCircle2,
   ShieldCheck,
   ArrowRight,
-  Sparkles,
+  Lock,
+  LogIn,
+  UserPlus,
+  MailWarning,
 } from 'lucide-react';
 import { CatalogItemData } from '@/lib/types';
 import { formatIDR } from '@/lib/crypto';
@@ -23,7 +27,7 @@ interface QuickOrderModalProps {
 
 export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
   const router = useRouter();
-  const { createInvoice, setActiveWhatsAppInvoice } = useAppState();
+  const { currentUser, createInvoice, setActiveWhatsAppInvoice } = useAppState();
 
   const [clientFullName, setClientFullName] = useState('');
   const [clientNickname, setClientNickname] = useState('');
@@ -34,17 +38,114 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (currentUser) {
+      setClientFullName(currentUser.fullName);
+      setClientNickname(currentUser.nickname);
+      setClientPhone(currentUser.phone);
+      setClientEmail(currentUser.email);
+    }
+  }, [currentUser, item]);
+
   if (!item) return null;
 
   const totalNominal = item.price * Math.max(1, quantity);
 
-  const handleQuickFillDemo = () => {
-    setClientFullName('Koh Very Wijaya');
-    setClientNickname('Koh Very');
-    setClientPhone('081288990011');
-    setClientEmail('very.wijaya@partnerbisnis.id');
-    setCustomNote('Pemesanan langsung dari katalog website terintegrasi');
-  };
+  // ============================================================================
+  // 1. GUEST GATE: REQUIRE LOGIN BEFORE ORDERING / TRANSACTION ACTIVITY
+  // ============================================================================
+  if (!currentUser) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4">
+        <div className="relative w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden animate-fade-in-up">
+          <div className="bg-gradient-to-r from-[#192730] to-[#0089e4] px-6 py-5 text-white flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Lock className="h-5 w-5 text-sky-300" />
+              <h3 className="text-base font-extrabold">Akses Member Diperlukan</h3>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1 text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-5 text-center">
+            <div className="h-14 w-14 rounded-2xl bg-sky-50 border border-sky-200 text-[#0089e4] flex items-center justify-center mx-auto">
+              <ShieldCheck className="h-8 w-8" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h4 className="text-lg font-extrabold text-[#192730]">
+                Silakan Login atau Daftar Member Terlebih Dahulu
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Untuk memesan <strong>{item.name}</strong> ({formatIDR(item.price)}) dan menerbitkan Invoice Resmi beserta Link Pembayaran Kartu Kredit / Virtual Account, Anda wajib menggunakan akun Member terverifikasi.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0089e4] hover:bg-[#0073c2] px-4 py-3 text-xs font-extrabold text-white shadow-md transition"
+              >
+                <LogIn className="h-4 w-4" />
+                Login Member
+              </Link>
+              <Link
+                href="/register"
+                onClick={onClose}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-900 hover:bg-slate-800 px-4 py-3 text-xs font-extrabold text-white transition"
+              >
+                <UserPlus className="h-4 w-4 text-sky-400" />
+                Daftar Akun Baru
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // 2. EMAIL VERIFICATION GATE: REQUIRE VERIFIED EMAIL BEFORE ANY ACTIVITY
+  // ============================================================================
+  if (!currentUser.isVerified) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4">
+        <div className="relative w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden animate-fade-in-up">
+          <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-5 text-white flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <MailWarning className="h-5 w-5" />
+              <h3 className="text-base font-extrabold">Verifikasi Email Diperlukan</h3>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1 text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-5 text-center">
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Halo <strong>{currentUser.fullName}</strong>, akun Anda (<strong>{currentUser.email}</strong>) belum diverifikasi. Silakan masukkan kode OTP yang dikirimkan oleh <strong>admin@socare.id</strong> sebelum melakukan aktivitas pemesanan atau pembayaran di website ini.
+            </p>
+            <Link
+              href={`/verify-email?email=${encodeURIComponent(currentUser.email)}`}
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-3 text-xs font-extrabold text-white shadow-md transition"
+            >
+              Verifikasi Email Sekarang
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleOrder = async (destination: 'CHECKOUT' | 'INVOICE' | 'WHATSAPP') => {
     if (!clientFullName.trim()) {
@@ -63,11 +164,12 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
       }`;
 
       const created = await createInvoice({
+        memberId: currentUser.id,
         clientFullName: clientFullName.trim(),
         clientNickname:
           clientNickname.trim() || clientFullName.trim().split(' ')[0] || 'Klien',
         clientPhone: clientPhone.trim() || '081234567890',
-        clientEmail: clientEmail.trim() || 'client@perusahaan.com',
+        clientEmail: clientEmail.trim() || currentUser.email,
         issueDate: today,
         dueDate: due,
         allowCreditCard: true,
@@ -102,7 +204,7 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <div className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fade-in-up">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#192730] to-[#0089e4] px-6 py-5 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -114,7 +216,7 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
                 Pemesanan & Checkout Terintegrasi
               </h3>
               <p className="text-xs text-sky-100">
-                Otomatis Menerbitkan Invoice Resmi & Link Pembayaran Kartu Kredit / VA
+                Terhubung dengan Akun Member Terverifikasi: {currentUser.memberCode}
               </p>
             </div>
           </div>
@@ -151,21 +253,6 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
             </div>
           </div>
 
-          {/* Demo Autofill Button */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">
-              Data Pemesan / Klien
-            </span>
-            <button
-              type="button"
-              onClick={handleQuickFillDemo}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0089e4] hover:underline"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Isi Data Contoh Otomatis
-            </button>
-          </div>
-
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-semibold text-red-700">
               {error}
@@ -182,7 +269,6 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
                 type="text"
                 value={clientFullName}
                 onChange={(e) => setClientFullName(e.target.value)}
-                placeholder="Contoh: I Made Justin Laksmana Van Veggel"
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-[#0089e4] focus:outline-none"
               />
             </div>
@@ -195,7 +281,6 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
                 type="text"
                 value={clientNickname}
                 onChange={(e) => setClientNickname(e.target.value)}
-                placeholder="Contoh: Justin / Koh Very"
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-[#0089e4] focus:outline-none"
               />
             </div>
@@ -208,7 +293,6 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
                 type="text"
                 value={clientPhone}
                 onChange={(e) => setClientPhone(e.target.value)}
-                placeholder="081234567890"
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-[#0089e4] focus:outline-none"
               />
             </div>
@@ -221,7 +305,6 @@ export function QuickOrderModal({ item, onClose }: QuickOrderModalProps) {
                 type="email"
                 value={clientEmail}
                 onChange={(e) => setClientEmail(e.target.value)}
-                placeholder="email@perusahaan.com"
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-[#0089e4] focus:outline-none"
               />
             </div>

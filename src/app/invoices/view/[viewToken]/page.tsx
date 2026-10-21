@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
-  Globe,
   ShieldCheck,
   Send,
   ArrowLeft,
@@ -19,6 +18,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useAppState } from '@/context/AppStateContext';
+import { SocareLogo } from '@/components/SocareLogo';
 import {
   formatIDR,
   formatDateDDMMYYYY,
@@ -93,12 +93,6 @@ export default function PublicInvoiceViewPage() {
               className="rounded-xl bg-[#0089e4] px-4 py-2.5 text-xs font-bold text-white"
             >
               Kembali ke Beranda
-            </Link>
-            <Link
-              href="/admin"
-              className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold text-slate-700"
-            >
-              Buka Dashboard Admin
             </Link>
           </div>
         </div>
@@ -212,12 +206,10 @@ export default function PublicInvoiceViewPage() {
         )}
 
         <div className="p-6 sm:p-10 space-y-8">
-          {/* Header: Company Identity & Status Badge */}
+          {/* Header: Official Socare Logo & Status Badge */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-slate-200 pb-7">
-            <div className="flex items-start gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#0089e4] to-[#192730] flex items-center justify-center text-white shadow-md shrink-0">
-                <Globe className="h-8 w-8" />
-              </div>
+            <div className="space-y-3">
+              <SocareLogo variant="light" size="md" showSubtitle={false} />
               <div className="space-y-1">
                 <h1 className="text-xl sm:text-2xl font-extrabold text-[#192730] tracking-tight">
                   {state.company.companyName}

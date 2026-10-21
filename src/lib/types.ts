@@ -10,6 +10,34 @@ export type PaymentGatewayProvider =
   | 'MIDTRANS_PRODUCTION'
   | 'XENDIT';
 
+export type UserRole = 'ADMIN' | 'MEMBER';
+
+export type AccountStatus = 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED';
+
+export interface MemberUserData {
+  id: string;
+  memberCode: string; // e.g., MBR-SGI-001
+  fullName: string;
+  nickname: string;
+  email: string;
+  phone: string;
+  password?: string;
+  role: UserRole;
+  companyName: string;
+  jobTitle: string;
+  address: string;
+  city: string;
+  identityNumber?: string; // NIK / Passport / NPWP
+  isVerified: boolean;
+  accountStatus: AccountStatus;
+  verificationCode?: string;
+  verificationSentAt?: string | null;
+  verifiedAt?: string | null;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CompanySettingData {
   id: string;
   companyName: string;
@@ -23,6 +51,10 @@ export interface CompanySettingData {
   midtransServerKey?: string;
   midtransClientKey?: string;
   xenditSecretKey?: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
   updatedAt: string;
 }
 
@@ -72,6 +104,7 @@ export interface InvoiceData {
   viewToken: string;     // 64-char hex SHA-256 hash
   checkoutToken: string; // 64-char hex SHA-256 hash
 
+  memberId?: string | null;
   clientFullName: string;
   clientNickname: string;
   clientEmail: string;
@@ -105,4 +138,5 @@ export interface DatabaseState {
   catalog: CatalogItemData[];
   invoices: InvoiceData[];
   transactions: TransactionLogData[];
+  members: MemberUserData[];
 }

@@ -12,8 +12,11 @@ import {
   ExternalLink,
   RotateCcw,
   ShieldCheck,
+  Users,
+  Mail,
 } from 'lucide-react';
 import { useAppState } from '@/context/AppStateContext';
+import { SocareLogo } from '@/components/SocareLogo';
 
 export default function AdminLayout({
   children,
@@ -35,13 +38,18 @@ export default function AdminLayout({
       icon: PlusCircle,
     },
     {
+      href: '/admin/members',
+      label: `Manajemen Member (${state.members?.length || 0})`,
+      icon: Users,
+    },
+    {
       href: '/admin/catalog',
       label: 'Katalog Jasa & Produk',
       icon: Package,
     },
     {
       href: '/admin/settings',
-      label: 'Pengaturan & Gateway',
+      label: 'Pengaturan, Gateway & SMTP',
       icon: Settings,
     },
   ];
@@ -51,17 +59,15 @@ export default function AdminLayout({
       {/* Sidebar */}
       <aside className="w-full lg:w-72 bg-[#192730] text-white shrink-0 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800">
         <div>
-          {/* Brand Header */}
+          {/* Brand Header with Official Uploaded Socare Logo */}
           <div className="p-5 border-b border-slate-800 flex items-center justify-between">
             <Link href="/admin" className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-[#0089e4] flex items-center justify-center text-white font-bold shadow">
-                <Globe className="h-5 w-5" />
-              </div>
+              <SocareLogo variant="dark" size="sm" showSubtitle={false} />
               <div>
-                <h1 className="text-sm font-extrabold tracking-tight text-white line-clamp-1">
+                <h1 className="text-xs font-extrabold tracking-tight text-white line-clamp-1">
                   {state.company.companyName}
                 </h1>
-                <span className="text-[11px] text-sky-400 font-semibold block">
+                <span className="text-[10px] text-sky-400 font-semibold block">
                   Smart Invoicing & ERP Admin
                 </span>
               </div>
@@ -72,7 +78,7 @@ export default function AdminLayout({
           <div className="p-4">
             <Link
               href="/admin/invoices/create"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#0089e4] hover:bg-[#0073c2] px-4 py-3 text-xs font-extrabold text-white shadow-lg shadow-[#0089e4]/25 transition"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0089e4] to-sky-600 hover:from-[#0073c2] hover:to-sky-700 px-4 py-3 text-xs font-extrabold text-white shadow-lg shadow-[#0089e4]/25 transition"
             >
               <PlusCircle className="h-4 w-4" />
               + Buat Invoice & Link Bayar Cepat
@@ -88,9 +94,9 @@ export default function AdminLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition ${
+                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
                     active
-                      ? 'bg-[#0089e4]/20 text-sky-300 border border-[#0089e4]/40'
+                      ? 'bg-[#0089e4]/20 text-sky-300 border border-[#0089e4]/40 shadow-sm'
                       : 'text-slate-300 hover:bg-white/5 hover:text-white'
                   }`}
                 >
@@ -104,10 +110,14 @@ export default function AdminLayout({
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-slate-800 space-y-2.5 hidden lg:block">
-          <div className="rounded-xl bg-slate-800/80 border border-slate-700 p-3 text-xs space-y-1">
+          <div className="rounded-xl bg-slate-800/80 border border-slate-700 p-3 text-xs space-y-1.5">
             <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
               <ShieldCheck className="h-4 w-4" />
               Gateway: {state.company.pgProvider}
+            </div>
+            <div className="flex items-center gap-1.5 text-sky-300 text-[11px]">
+              <Mail className="h-3.5 w-3.5" />
+              SMTP: {state.company.smtpUser || 'admin@socare.id'}
             </div>
             <p className="text-[11px] text-slate-400">
               Prefix Invoice: <strong className="text-slate-200 font-mono">{state.company.invoicePrefix}</strong>
@@ -125,7 +135,7 @@ export default function AdminLayout({
           <button
             type="button"
             onClick={() => {
-              if (confirm('Reset seluruh invoice dan katalog kembali ke data contoh awal?')) {
+              if (confirm('Reset seluruh invoice, member, dan katalog kembali ke data contoh awal?')) {
                 resetDemoData();
               }
             }}
@@ -143,14 +153,21 @@ export default function AdminLayout({
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base sm:text-lg font-extrabold text-[#192730]">
-              Panel Kendali Smart Invoicing, Payment Link & Katalog Terintegrasi
+              Panel Kendali Smart Invoicing, Member Verification & Katalog Terintegrasi
             </h2>
             <p className="text-xs text-slate-500">
-              Tersinkronisasi otomatis dengan halaman Company Profile, Tokenized View Invoice, dan Checkout Kartu Kredit (3DS) / VA
+              Tersinkronisasi otomatis dengan Member Portal, SMTP Hostinger (admin@socare.id), dan Checkout Kartu Kredit (3DS) / VA
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              href="/admin/members"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 transition"
+            >
+              <Users className="h-3.5 w-3.5 text-[#0089e4]" />
+              Kelola Member
+            </Link>
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 transition"
